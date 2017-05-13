@@ -4,16 +4,18 @@ This repo contains some LinkIt 7697 Arduino project with Web BLE interface.
 
 With an BLE-enabled laptop (ex. Macbook) or an BLE-enabled mobile phone, you can interact with LinkIt 7697 devices.
 
-* LinkIt 7697: An Wi-Fi / BLE HDK, with Arduino IDE, by MediaTek. see https://docs.labs.mediatek.com/resource/linkit7697-arduino/en.
-* Web BLE: Web bluetooth API [Link](https://developers.google.com/web/updates/2015/07/interact-with-ble-devices-on-the-web) enables browser to use Bluetooth functionality.
-  * Web Bluetooth API is not W3C standard, only partial browser/platform support it. Currently it is available on:
-    * Chrome browser (Desktop version)
-    * Chrome browser (Android)
-    * check https://www.chromestatus.com/feature/5264933985976320 for more detail.
+* **_LinkIt 7697_**
+  * An Wi-Fi / BLE HDK, with Arduino IDE, by MediaTek. see https://docs.labs.mediatek.com/resource/linkit7697-arduino/en.
+* **_Web BLE_**
+  * Web bluetooth API [Link](https://developers.google.com/web/updates/2015/07/interact-with-ble-devices-on-the-web) enables browser to use Bluetooth functionality.
+  * It is NOT W3C standard, therefore only partial browsers/platforms support it. Currently it is only available on:
+    * **Chrome** browser (Desktop version)
+    * **Chrome** browser (Android)
+    * Check https://www.chromestatus.com/feature/5264933985976320 for latest status.
 
 ## SimplePeripheral
 
-This demo control USR LED of LinkIt 7697 by Web browser.
+This demo toggles LED of LinkIt 7697 on/off from a Web browser.
 
 ### How to Use
 
