@@ -19,5 +19,8 @@ This demo control USR LED of LinkIt 7697 by Web browser.
 
 * Build and upload `SimplePeripheral/SimplePeripheral.ino` sketch to LinkIt 7697
 * Visit https://smallptsai.github.io/linkit-7697-arduino-with-web-ble/SimplePeripheral/web_ble.html with Web Bluetooth API enabled browser
+* Click `Connect` button, select `BLE LED` device and pair.
+* Click `Toggle` button to switch on/off LED on LinkIt 7697
+
 
 
