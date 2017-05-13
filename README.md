@@ -2,16 +2,21 @@
 
 This repo contains some LinkIt 7697 Arduino project with Web BLE interface.
 
-With an BLE-enabled laptop (ex. Macbook) or an BLE-enabled mobile phone, you can interact with LinkIt 7697 devices.
+With an BLE-enabled **laptop** (ex. Macbook) or an BLE-enabled **mobile phone** (ex. Android phone), you can use them to interact with LinkIt 7697 devices.
 
 * **_LinkIt 7697_**
   * An Wi-Fi / BLE HDK, with Arduino IDE, by MediaTek. see https://docs.labs.mediatek.com/resource/linkit7697-arduino/en.
 * **_Web BLE_**
   * Web bluetooth API [Link](https://developers.google.com/web/updates/2015/07/interact-with-ble-devices-on-the-web) enables browser to use Bluetooth functionality.
   * It is NOT W3C standard, therefore only partial browsers/platforms support it. Currently it is only available on:
-    * **Chrome** browser (Desktop version)
-    * **Chrome** browser (Android)
+    * **Chrome** browser - Desktop version
+    * **Chrome** browser - Android 6 (Marshmallow) and above
     * Check https://www.chromestatus.com/feature/5264933985976320 for latest status.
+
+```diff
+- iOS: Web Bluetooth API is not supported yet
+- Android: require Android 6 (Marshmallow) and above
+```
 
 ## SimplePeripheral
 
