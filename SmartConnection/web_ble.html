@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Linkit 7697 Web BLE</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+  <script>
+
+  var _serv_uuid = '29ab0000-257d-403f-8057-d1ab4ce78aa5';
+  var _char_uuid = '29ab0001-257d-403f-8057-d1ab4ce78aa5';
+
+  var bluetoothDevice = null;
+  var myService;
+  var myCharacteristic;
+
+  var connected = false;
+
+  function log(v)
+  {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    document.querySelector('#log').textContent += line + '\n';
+    console.log(line);
+  }
+
+  function _connect() {
+    document.querySelector('#log').textContent = '';
+
+    log('Requesting any Bluetooth Device...');
+    navigator.bluetooth.requestDevice({
+     // filters: [...] <- Prefer filters to save energy & show relevant devices.
+        acceptAllDevices: true,
+        optionalServices: [_serv_uuid]
+        })
+    .then(device => {
+      log('Connecting to GATT Server...');
+      bluetoothDevice = device;
+      bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+      return device.gatt.connect();
+    })
+    .then(server => {
+      log('Getting Service...');
+      return server.getPrimaryService(_serv_uuid);
+    })
+    .then(service => {
+      log('Getting Characteristic...');
+      myService = service;
+      return service.getCharacteristic(_char_uuid);
+    })
+    .then(characteristic => {
+      myCharacteristic = characteristic;
+      connected = true;
+      _update();
+    })
+    .catch(error => {
+      log("Error:", error); 
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+      bluetoothDevice = null;
+      connected = false;
+      _update();
+    });
+
+  }
+
+  function onDisconnected(event) {
+    log("Disconnected by remote device!"); 
+    bluetoothDevice = null;
+    connected = false;
+    _update();    
+  }
+
+  function onNotifications(event) {
+    let value = event.target.value;
+    log("onNotification:", value);
+  }
+
+  function _disconnect() {
+    log("_disconnect");
+    if (!connected) {
+      return;
+    }
+    log('Disconnecting from Bluetooth Device...');
+    if (bluetoothDevice.gatt.connected) {
+      bluetoothDevice.gatt.disconnect();
+    } else {
+      log('> Bluetooth Device is already disconnected');
+    }
+    _update();
+  }
+
+  function _submit() {
+    if(!connected)
+      return;
+
+    ssid = document.querySelector('#ssid').value;
+    pwd = document.querySelector('#password').value;
+
+    var i, j;
+    var v = new Uint8Array(2 + ssid.length + 1 + pwd.length + 1);
+    v.fill(0);
+    v[0] = 2;
+    v[1] = 2 + ssid.length + 1;
+    for(i=0;i<ssid.length;i++)
+      v[v[0]+i] = ssid.charCodeAt(i);
+    for(i=0;i<pwd.length;i++)
+      v[v[1]+i] = pwd.charCodeAt(i);
+
+    myCharacteristic.writeValue(v)
+    .then(_ => {
+      log('Data submitted!');
+    })
+    .catch(error => { 
+      log(error); 
+    });
+    return;
+  }
+
+  function _update()
+  {
+    if(connected)
+    {
+      document.querySelector('#connect').onclick = _disconnect;
+      document.querySelector('#connect').innerText = "Disconnect";
+      document.querySelector('#connect').classList.remove("btn-primary");
+      document.querySelector('#state').innerText = "Connected";
+      document.querySelector('#hint').innerText = "Hint: Input SSID and password and Press Send";
+      document.querySelector('#submit').classList.remove("disabled");
+      document.querySelector('#submit').classList.add("btn-primary");
+      document.querySelector('#submit').onclick = _submit;
+    }
+    else
+    {
+      document.querySelector('#connect').onclick = _connect;
+      document.querySelector('#connect').innerText = "Connect";
+      document.querySelector('#connect').classList.add("btn-primary");
+      document.querySelector('#state').innerText = "Disconnected";
+      document.querySelector('#hint').innerText = "Hint: Press Connect to connect to LinkIt 7697";
+      document.querySelector('#submit').classList.add("disabled");
+      document.querySelector('#submit').classList.remove("btn-primary");
+    }
+  }
+
+  </script>
+
+</head>
+<body onload='_update()'>
+
+<div class="container">
+  <div class="page-header">
+    <h2>LinkIt 7697<br>Web BLE Smart Connection</h2>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <button id='connect' type="button" class="btn btn-block">Connect</button>
+      <br>
+      <div class="input-group">
+        <span class="input-group-addon"><i class="glyphicon glyphicon-signal"></i></span>
+        <input id="ssid" type="text" class="form-control" name="ssid" placeholder="SSID">
+      </div>
+      <div class="input-group">
+        <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+        <input id="password" type="password" class="form-control" name="password" placeholder="Password">
+      </div>
+      <button id='submit' type="button" class="btn btn-block">Send Wi-Fi info</button>
+    </div>
+    <div class="col-sm-9">
+      <h4 id='state'></h4>
+      <div id='hint'></div>
+      <h4>Log:</h4>
+      <pre id='log'></pre>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
