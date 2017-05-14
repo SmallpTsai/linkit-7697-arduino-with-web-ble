@@ -112,6 +112,14 @@
 
   function _update()
   {
+    if(!navigator.bluetooth) {
+      document.querySelector('#state').innerText = "Not supported!";
+      document.querySelector('#hint').innerText = "Hint: Web Bluetooth API is not available on current browser";
+      document.querySelector('#connect').classList.add("disabled");
+      document.querySelector('#toggle').classList.add("disabled");
+      return;
+    }
+
     if(connected)
     {
       document.querySelector('#connect').onclick = _disconnect;
