@@ -23,3 +23,9 @@ With an BLE-enabled **laptop** (ex. Macbook) or an BLE-enabled **mobile phone** 
 This demo toggles LED of LinkIt 7697 on/off from a Web browser.
 
 visit [SimplePeripheral](SimplePeripheral) for more detail.
+
+## SmartConnection
+
+This demo send Wi-Fi configuration to LinkIt 7697 via BLE. LinkIt 7697 then use the configuration to connect to wireless network.
+
+visit [SmartConnection](SmartConnection) for more detail.
