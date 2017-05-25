@@ -29,3 +29,9 @@ visit [SimplePeripheral](SimplePeripheral) for more detail.
 This demo send Wi-Fi configuration to LinkIt 7697 via BLE. LinkIt 7697 then use the configuration to connect to wireless network.
 
 visit [SmartConnection](SmartConnection) for more detail.
+
+## NeoPixel_WS2812
+
+This demo control NeoPixel (WS2812) lights of LinkIt 7697 from a Web browser
+
+visit [NeoPixel_WS2812](NeoPixel_WS2812) for more detail.
