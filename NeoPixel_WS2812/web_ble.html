@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Linkit 7697 Web BLE</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+  <style>
+  #count, #red, #green, #blue {
+    float: left;
+    clear: left;
+    width: 90%;
+    margin: 10px;
+  }
+  #red .ui-slider-range { background: #ef2929; }
+  #red .ui-slider-handle { border-color: #ef2929; }
+  #green .ui-slider-range { background: #8ae234; }
+  #green .ui-slider-handle { border-color: #8ae234; }
+  #blue .ui-slider-range { background: #729fcf; }
+  #blue .ui-slider-handle { border-color: #729fcf; }  
+  </style>
+
+  <script>
+
+  var _serv_uuid = '19B10030-E8F2-537E-4F6C-D104768A1214'.toLowerCase();
+  var _char_uuid = '19B10031-E8F2-537E-4F6C-D104768A1214'.toLowerCase();
+
+  var bluetoothDevice = null;
+  var connected = false;
+  var myCharacteristic;
+  var value = {};
+
+  function log(v)
+  {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    document.querySelector('#log').textContent += line + '\n';
+    console.log(line);
+  }
+
+  function _connect() {
+    document.querySelector('#log').textContent = '';
+    log('Requesting any Bluetooth Device...');
+    navigator.bluetooth.requestDevice({
+     // filters: [...] <- Prefer filters to save energy & show relevant devices.
+        acceptAllDevices: true,
+        optionalServices: [_serv_uuid]
+        })
+    .then(device => {
+      log('Connecting to GATT Server...');
+      bluetoothDevice = device;
+      bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+      return device.gatt.connect();
+    })
+    .then(server => {
+      log('Getting Service...');
+      return server.getPrimaryService(_serv_uuid);
+    })
+    .then(service => {
+      log('Getting Characteristic...');
+      return service.getCharacteristic(_char_uuid);
+    })
+    .then(characteristic => {
+      log('Reading Characteristic values...');
+      myCharacteristic = characteristic;
+      return characteristic.readValue();
+    })
+    .then(value => {
+      connected = true;
+      value.count = value.getUint8(0);
+      value.R = value.getUint8(1);
+      value.G = value.getUint8(2);
+      value.B = value.getUint8(3)
+      $( "#red" ).slider( "value", value.R );
+      $( "#green" ).slider( "value", value.G );
+      $( "#blue" ).slider( "value", value.B );
+      $( "#count" ).slider( "value", value.count );
+      log('Value is :' + JSON.stringify(value));
+      _update();
+    })
+    .catch(error => {
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+      bluetoothDevice = null;
+      connected = false;
+      log("Error:", error); 
+      _update();
+    });
+  }
+
+  function onDisconnected(event) {
+      log("Disconnected by remote device!"); 
+      bluetoothDevice = null;
+      connected = false;
+      _update();    
+  }
+
+  function _disconnect() {
+    log("_disconnect");
+    if (!connected) {
+      return;
+    }
+    log('Disconnecting from Bluetooth Device...');
+    if (bluetoothDevice.gatt.connected) {
+      bluetoothDevice.gatt.disconnect();
+    } else {
+      log('> Bluetooth Device is already disconnected');
+    }
+    _update();
+  }
+
+  var updateTimer;
+
+  function _slide()
+  {
+    clearTimeout(updateTimer);
+    updateTimer = setTimeout(delayTrigger, 500);
+
+    function delayTrigger() {
+      if(!connected)
+        return;
+
+      if(value.R == $( "#red" ).slider( "value" ) &&
+        value.G == $( "#green" ).slider( "value" ) &&
+        value.B == $( "#blue" ).slider( "value" ) &&
+        value.count == $( "#count" ).slider( "value" ))
+        return;
+
+      value.R = $( "#red" ).slider( "value" );
+      value.G = $( "#green" ).slider( "value" )
+      value.B = $( "#blue" ).slider( "value" );
+      value.count = $( "#count" ).slider( "value" );
+
+      // Writing 1 is the signal to reset energy expended.
+      var v = new Uint8Array(4);
+      v[0] = value.count;
+      v[1] = value.R;
+      v[2] = value.G;
+      v[3] = value.B;
+      myCharacteristic.writeValue(v)
+      .then(_ => {
+        log('set done, new value is ' + JSON.stringify(value));
+      })
+      .catch(error => { 
+        log(error); 
+      });      
+    }
+  }
+
+  function _update()
+  {
+    if(!navigator.bluetooth) {
+      document.querySelector('#state').innerText = "Not supported!";
+      document.querySelector('#hint').innerText = "Hint: Web Bluetooth API is not available on current browser";
+      document.querySelector('#connect').classList.add("disabled");
+
+      $("#count, #red, #green, #blue").slider("disable");
+      return;
+    }
+
+    if(connected)
+    {
+      document.querySelector('#connect').onclick = _disconnect;
+      document.querySelector('#connect').innerText = "Disconnect";
+      document.querySelector('#connect').classList.remove("btn-primary");
+      document.querySelector('#state').innerText = "Connected";
+      document.querySelector('#hint').innerText = "Hint: Press Toggle to switch on/off of LED on LinkIt 7697";
+
+      $("#count, #red, #green, #blue").slider("enable");
+    }
+    else
+    {
+      document.querySelector('#connect').onclick = _connect;
+      document.querySelector('#connect').innerText = "Connect";
+      document.querySelector('#connect').classList.add("btn-primary");
+      document.querySelector('#state').innerText = "Disconnected";
+      document.querySelector('#hint').innerText = "Hint: Press Connect to connect to LinkIt 7697";
+
+      $("#count, #red, #green, #blue").slider("disable");
+    }
+  }
+
+  function _load() {
+    $( "#red, #green, #blue" ).slider({
+      orientation: "horizontal",
+      range: "min",
+      max: 255,
+      value: 127,
+      slide: _slide,
+      change: _slide,
+    });    
+    $( "#count" ).slider({
+      orientation: "horizontal",
+      range: "min",
+      max: 16,
+      value: 0,
+      slide: _slide,
+      change: _slide,
+    });    
+
+    _update();
+  }
+  </script>
+
+</head>
+<body onload='_load()'>
+
+<div class="container">
+  <div class="page-header">
+    <h2>LinkIt 7697<br>Web BLE demo</h2>
+    Control NeoPixel(WS2812) via Bluetooth LE!
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <button id='connect' type="button" class="btn btn-block">Connect</button>
+      <br>
+    </div>
+    <div class="col-sm-6">
+      <div id="count"></div>
+      <div id="red"></div>
+      <div id="green"></div>
+      <div id="blue"></div>   
+    </div>
+    <div class="col-sm-6">
+      <br>
+      <h4 id='state'></h4>
+      <div id='hint'></div>
+      <h4>Log:</h4>
+      <pre id='log'></pre>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
